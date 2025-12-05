@@ -1,5 +1,4 @@
-import { Elysia, t } from "elysia";
-import { env } from "../config/env";
+import { Elysia, status, t } from "elysia";
 
 export const auth = new Elysia({ name: "auth" })
 	.guard({
@@ -7,18 +6,21 @@ export const auth = new Elysia({ name: "auth" })
 			authorization: t.String(),
 		}),
 	})
-	.onBeforeHandle(({ headers, set }) => {
-		const authorization = headers.authorization;
+	.onRequest(({ request }) => {
+		const authorization = request.headers.get("authorization");
+
+		if (!authorization || typeof authorization !== "string") {
+			throw status(401, "Unauthorized: Missing Authorization header");
+		}
 
 		const [scheme, token] = authorization.split(" ");
 
 		if (scheme !== "Bearer" || !token) {
-			set.status = 401;
-			return { error: "Unauthorized: Invalid Authorization header format" };
+			throw status(401, "Unauthorized: Invalid Authorization header format");
 		}
 
-		if (token !== env.STATIC_TOKEN) {
-			set.status = 401;
-			return { error: "Unauthorized: Invalid token" };
+		const staticToken = process.env.STATIC_TOKEN;
+		if (!staticToken || token !== staticToken) {
+			throw status(401, "Unauthorized: Invalid token");
 		}
 	});

@@ -6,6 +6,7 @@ import { books } from "./modules/books";
 const app = new Elysia()
 	.use(openapi())
 	.get("/", () => "Hello Library API!")
+	.get("/health", () => ({ status: "ok" }))
 	.use(books)
 	.listen(env.PORT);
 
