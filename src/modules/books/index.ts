@@ -1,8 +1,10 @@
 import { Elysia, t } from "elysia";
+import { auth } from "../../middleware/auth";
 import { BookModel } from "./model";
 import * as BookService from "./service";
 
 export const books = new Elysia({ prefix: "/books" })
+	.use(auth)
 	.get(
 		"/",
 		async ({ query }) => {
