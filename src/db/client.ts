@@ -1,9 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { env } from "../config/env";
 
-const connectionString =
-	process.env.DATABASE_URL || "postgresql://localhost:5432/mainstory_library";
-
-const client = postgres(connectionString, { prepare: false });
+const client = postgres(env.DATABASE_URL, { prepare: false });
 
 export const db = drizzle(client);
