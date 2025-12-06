@@ -45,14 +45,14 @@ describe("Auth Middleware", () => {
 		const response = await app.handle(
 			new Request("http://localhost/test", {
 				headers: {
-					authorizatoin: "Basic test-token-123",
+					authorization: "Basic test-token-123",
 				},
 			}),
 		);
 
 		expect(response.status).toBe(401);
 		const text = await response.text();
-		expect(text).toBe("Unauthorized: Missing Authorization header");
+		expect(text).toBe("Unauthorized: Invalid Authorization header format");
 	});
 
 	it("shouldn't allow request with invalid authorization token", async () => {
@@ -61,13 +61,13 @@ describe("Auth Middleware", () => {
 		const response = await app.handle(
 			new Request("http://localhost/test", {
 				headers: {
-					authorizatoin: "Bearer test-token-999",
+					authorization: "Bearer test-token-999",
 				},
 			}),
 		);
 
 		expect(response.status).toBe(401);
 		const text = await response.text();
-		expect(text).toBe("Unauthorized: Missing Authorization header");
+		expect(text).toBe("Unauthorized: Invalid token");
 	});
 });

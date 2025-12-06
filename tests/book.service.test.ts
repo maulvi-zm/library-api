@@ -1,5 +1,6 @@
 import {
 	afterAll,
+	afterEach,
 	beforeAll,
 	describe,
 	expect,
@@ -13,27 +14,30 @@ setDefaultTimeout(1000);
 let originalDatabaseUrl: string | undefined;
 let stopTestDB: (() => Promise<void>) | null = null;
 let BookService: typeof import("../src/modules/books/service");
+let cleanupDatabase: () => Promise<void>;
 
 describe("BookService Integration Tests", () => {
 	beforeAll(async () => {
 		originalDatabaseUrl = process.env.DATABASE_URL;
 
-		const { setupTestDB } = await import("./setup");
+		const { setupTestDB, cleanupDatabase: cleanup } = await import("./setup");
 		const testDB = await setupTestDB();
 		stopTestDB = testDB.stop;
+		cleanupDatabase = cleanup;
 
-		process.env.DATABASE_URL = testDB.connectionString;
-
-		const dbClientModule = await import("./db-client");
-		const testDb = await dbClientModule.initializeTestDb();
+		process.env.DATABASE_URL = "pglite://memory";
 
 		mock.module("../src/db/client", () => {
 			return {
-				db: testDb,
+				db: testDB.db,
 			};
 		});
 
 		BookService = await import("../src/modules/books/service");
+	});
+
+	afterEach(async () => {
+		await cleanupDatabase();
 	});
 
 	afterAll(async () => {
@@ -75,9 +79,9 @@ describe("BookService Integration Tests", () => {
 
 		expect(result).toBeDefined();
 		expect(result.data).toBeInstanceOf(Array);
-		expect(result.data.length).toBeGreaterThanOrEqual(2);
+		expect(result.data.length).toBe(2);
 		expect(result.pagination).toBeDefined();
-		expect(result.pagination.totalItems).toBeGreaterThanOrEqual(2);
+		expect(result.pagination.totalItems).toBe(2);
 	});
 
 	test("should get book by id", async () => {
@@ -120,12 +124,9 @@ describe("BookService Integration Tests", () => {
 
 		expect(result.success).toBe(true);
 
-		try {
-			await BookService.getById(created.id);
-			expect(true).toBe(false);
-		} catch (error: any) {
-			expect(error.code).toBe(404);
-		}
+		expect(BookService.getById(created.id)).rejects.toMatchObject({
+			code: 404,
+		});
 	});
 
 	test("should throw error when creating duplicate book name", async () => {
@@ -134,23 +135,15 @@ describe("BookService Integration Tests", () => {
 			author: "Author",
 		});
 
-		try {
-			await BookService.create({
+		expect(
+			BookService.create({
 				name: "Duplicate Test",
 				author: "Another Author",
-			});
-			expect(true).toBe(false);
-		} catch (error: any) {
-			expect(error.code).toBe(409);
-		}
+			}),
+		).rejects.toMatchObject({ code: 409 });
 	});
 
 	test("should throw error when book not found", async () => {
-		try {
-			await BookService.getById(99999);
-			expect(true).toBe(false);
-		} catch (error: any) {
-			expect(error.code).toBe(404);
-		}
+		expect(BookService.getById(99999)).rejects.toMatchObject({ code: 404 });
 	});
 });

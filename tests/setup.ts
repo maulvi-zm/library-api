@@ -1,31 +1,52 @@
+import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-import { initializeTestDb } from "./db-client";
-import { setSharedPGlite } from "./pglite-shared";
+import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/pglite";
+import { migrate } from "drizzle-orm/pglite/migrator";
+import * as schema from "../src/db/schema";
+
+let pgLite: PGlite | null = null;
+let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 export async function setupTestDB(): Promise<{
-	connectionString: string;
+	db: ReturnType<typeof drizzle<typeof schema>>;
 	stop: () => Promise<void>;
 }> {
-	try {
-		const pgLite = new PGlite();
-
+	if (!pgLite) {
+		pgLite = new PGlite();
 		await pgLite.waitReady;
-
-		setSharedPGlite(pgLite);
-
-		await initializeTestDb();
-
-		const connectionString = "pglite://memory";
-
-		return {
-			connectionString,
-			stop: async () => {
-				await pgLite.close();
-				setSharedPGlite(null);
-			},
-		};
-	} catch (error) {
-		console.error("Failed to setup test database:", error);
-		throw error;
 	}
+
+	if (!dbInstance) {
+		dbInstance = drizzle(pgLite, { schema });
+
+		await migrate(dbInstance, {
+			migrationsFolder: join(import.meta.dir, "..", "drizzle"),
+		});
+	}
+
+	return {
+		db: dbInstance,
+		stop: async () => {
+			if (pgLite) {
+				await pgLite.close();
+				pgLite = null;
+				dbInstance = null;
+			}
+		},
+	};
+}
+
+export async function cleanupDatabase() {
+	if (dbInstance) {
+		await dbInstance.execute(sql`DELETE FROM books`);
+		await dbInstance.execute(sql`ALTER SEQUENCE books_id_seq RESTART WITH 1`);
+	}
+}
+
+export function getTestDb() {
+	if (!dbInstance) {
+		throw new Error("Test database not initialized");
+	}
+	return dbInstance;
 }

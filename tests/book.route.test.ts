@@ -1,5 +1,6 @@
 import {
 	afterAll,
+	afterEach,
 	beforeAll,
 	describe,
 	expect,
@@ -15,32 +16,33 @@ let originalDatabaseUrl: string | undefined;
 let originalStaticToken: string | undefined;
 let stopTestDB: (() => Promise<void>) | null = null;
 let books: typeof import("../src/modules/books").books;
+let cleanupDatabase: () => Promise<void>;
 
 describe("Book Routes Integration Tests", () => {
 	beforeAll(async () => {
 		originalDatabaseUrl = process.env.DATABASE_URL;
 		originalStaticToken = process.env.STATIC_TOKEN;
 
-		const dbClientModule = await import("./db-client");
-		dbClientModule.resetDbInstance?.();
-
-		const { setupTestDB } = await import("./setup");
+		const { setupTestDB, cleanupDatabase: cleanup } = await import("./setup");
 		const testDB = await setupTestDB();
 		stopTestDB = testDB.stop;
+		cleanupDatabase = cleanup;
 
-		process.env.DATABASE_URL = testDB.connectionString;
+		process.env.DATABASE_URL = "pglite://memory";
 		process.env.STATIC_TOKEN = "test";
-
-		const testDb = await dbClientModule.initializeTestDb();
 
 		mock.module("../src/db/client", () => {
 			return {
-				db: testDb,
+				db: testDB.db,
 			};
 		});
 
 		const booksModule = await import("../src/modules/books");
 		books = booksModule.books;
+	});
+
+	afterEach(async () => {
+		await cleanupDatabase();
 	});
 
 	afterAll(async () => {
@@ -124,8 +126,9 @@ describe("Book Routes Integration Tests", () => {
 		const data = await response.json();
 		expect(data).toBeDefined();
 		expect(data.data).toBeInstanceOf(Array);
+		expect(data.data.length).toBe(2);
 		expect(data.pagination).toBeDefined();
-		expect(data.pagination.totalItems).toBeGreaterThanOrEqual(2);
+		expect(data.pagination.totalItems).toBe(2);
 	});
 
 	test("GET /books/:id should return a book", async () => {
