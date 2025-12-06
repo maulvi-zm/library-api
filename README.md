@@ -54,8 +54,29 @@ STATIC_TOKEN=your_secret_token_here
 |----------|-------------|----------|---------|
 | `PORT` | Server port | No | 3000 |
 | `DATABASE_URL` | PostgreSQL connection string | Yes | - |
-| `NODE_ENV` | Environment (development/production) | No | development |
+| `NODE_ENV` | Environment (development/production/test) | No | development |
 | `STATIC_TOKEN` | Bearer token for authentication | Yes | - |
+
+### NODE_ENV Behavior
+
+The application adjusts its behavior based on the `NODE_ENV` setting:
+
+**Development** (default):
+- OpenAPI documentation enabled at `/swagger`
+- Permissive CORS policy (allows all origins)
+- Verbose logging (info, warn, error, debug)
+- Database connection pool: 10 max connections
+
+**Production**:
+- OpenAPI documentation **disabled** (security)
+- Strict CORS policy (only `*.mainstory.com` domains)
+- Minimal logging (warn and error only)
+- Optimized database pool: 20 max connections, 20s idle timeout
+
+**Test**:
+- All logging disabled
+- Permissive CORS policy
+- Minimal database connections (1 connection)
 
 ## Database Setup
 
