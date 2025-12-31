@@ -1,4 +1,4 @@
-# MainStory Library API
+# Library API
 
 A modern RESTful API for managing library books, built with Elysia framework and Bun runtime. Features include CRUD operations for books, static token authentication, and OpenAPI documentation.
 
@@ -24,7 +24,7 @@ A modern RESTful API for managing library books, built with Elysia framework and
 
 ```bash
 git clone <repository-url>
-cd mainstory-library-api
+cd library-api
 ```
 
 2. Install dependencies:
@@ -43,7 +43,7 @@ Edit `.env` with your configuration:
 
 ```env
 PORT=3000
-DATABASE_URL=postgresql://mainstory:mainstory_password@localhost:5432/mainstory_library
+DATABASE_URL=postgresql://library:library_password@localhost:5432/library_db
 NODE_ENV=development
 STATIC_TOKEN=your_secret_token_here
 ```
@@ -69,7 +69,7 @@ The application adjusts its behavior based on the `NODE_ENV` setting:
 
 **Production**:
 - OpenAPI documentation **disabled** (security)
-- Strict CORS policy (only `*.mainstory.com` domains)
+- Strict CORS policy (only `*.example.com` domains)
 - Minimal logging (warn and error only)
 - Optimized database pool: 20 max connections, 20s idle timeout
 
@@ -85,7 +85,7 @@ The application adjusts its behavior based on the `NODE_ENV` setting:
 1. Create a database:
 
 ```bash
-createdb mainstory_library
+createdb library_db
 ```
 
 2. Generate migration files:

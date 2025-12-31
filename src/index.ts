@@ -10,7 +10,7 @@ const app = new Elysia();
 if (env.NODE_ENV === "production") {
 	app.use(
 		cors({
-			origin: /^https:\/\/.*\.mainstory\.com$/,
+			origin: /^https:\/\/.*\.example\.com$/,
 			credentials: true,
 		}),
 	);

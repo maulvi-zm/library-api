@@ -7,6 +7,6 @@ export default defineConfig({
 	dbCredentials: {
 		url:
 			process.env.DATABASE_URL ||
-			"postgresql://mainstory:mainstory_password@localhost:5432/mainstory_library",
+			"postgresql://library:library_password@localhost:5432/library_db",
 	},
 });
